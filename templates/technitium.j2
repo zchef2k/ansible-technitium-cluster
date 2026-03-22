@@ -3,7 +3,7 @@ Description=Technitium DNS Server Cluster Node
 After=network-online.target
 
 [Container]
-Image=technitium/dns-server:latest
+Image=docker.io/technitium/dns-server:latest
 ContainerName=technitium-dns
 PublishPort=5053:53/udp
 PublishPort=5053:53/tcp

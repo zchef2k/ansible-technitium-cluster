@@ -39,6 +39,9 @@
       environment:
         DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user }}/bus"
         XDG_RUNTIME_DIR: "/run/user/{{ dns_user }}"
+      become: true
+      become_method: sudo
+      become_user: "{{ dns_user }}"
 
     - name: Start Technitium via machinectl
       ansible.builtin.systemd:
@@ -49,3 +52,6 @@
       environment:
         DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user }}/bus"
         XDG_RUNTIME_DIR: "/run/user/{{ dns_user }}"
+      become: true
+      become_method: sudo
+      become_user: "{{ dns_user }}"
