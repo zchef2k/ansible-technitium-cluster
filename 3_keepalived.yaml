@@ -1,0 +1,30 @@
+---
+- name: Configure Keepalived VIP
+  hosts: dns_nodes
+  become: true
+  tasks:
+    - name: Install Keepalived
+      ansible.builtin.dnf:
+        name: keepalived
+        state: present
+
+    - name: Configure firewalld for Keepalived VRRP
+      ansible.builtin.firewalld:
+        rich_rule: rule protocol value="vrrp" accept
+        permanent: true
+        state: enabled
+
+    - name: Deploy Keepalived Configuration
+      ansible.builtin.template:
+        src: keepalived.j2
+        dest: /etc/keepalived/keepalived.conf
+        owner: root
+        group: root
+        mode: '0640'
+
+  handlers:
+    - name: Restart keepalived
+      ansible.builtin.systemd:
+        name: keepalived
+        state: restarted
+        enabled: true

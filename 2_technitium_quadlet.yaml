@@ -1,0 +1,51 @@
+---
+- name: Deploy Technitium via Quadlet
+  hosts: dns_nodes
+  become: true
+  tasks:
+    # create a directory to map ssl certs to the container
+    - name: Create config and SSL directories
+      ansible.builtin.file:
+        path: "/opt/technitium/config/ssl"
+        state: directory
+        owner: "{{ dns_user }}"
+        group: "{{ dns_user }}"
+        mode: '0750'
+
+    - name: Ensure Quadlet directory exists
+      ansible.builtin.file:
+        path: "/home/{{ dns_user }}/.config/containers/systemd"
+        state: directory
+        owner: "{{ dns_user }}"
+        group: "{{ dns_user }}"
+        mode: '0750'
+
+    - name: Deploy Quadlet Container file
+      ansible.builtin.template:
+        src: technitium.j2
+        dest: "/home/{{ dns_user }}/.config/containers/systemd/technitium.container"
+        owner: "{{ dns_user }}"
+        group: "{{ dns_user }}"
+        mode: '0640'
+      notify:
+        - Reload quadlet via machinectl
+        - Start Technitium via machinectl
+
+  handlers:
+    - name: Reload quadlet via machinectl
+      ansible.builtin.systemd:
+        scope: user
+        daemon_reexec: true
+      environment:
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user }}/bus"
+        XDG_RUNTIME_DIR: "/run/user/{{ dns_user }}"
+
+    - name: Start Technitium via machinectl
+      ansible.builtin.systemd:
+        name: technitium
+        scope: user
+        enabled: true
+        state: started
+      environment:
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user }}/bus"
+        XDG_RUNTIME_DIR: "/run/user/{{ dns_user }}"

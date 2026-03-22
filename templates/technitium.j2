@@ -1,0 +1,18 @@
+[Unit]
+Description=Technitium DNS Server Cluster Node
+After=network-online.target
+
+[Container]
+Image=technitium/dns-server:latest
+ContainerName=technitium-dns
+PublishPort=5053:53/udp
+PublishPort=5053:53/tcp
+PublishPort=5380:5380/tcp
+PublishPort=53443:53443/tcp
+Volume=/opt/technitium/config:/etc/dns:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
