@@ -20,6 +20,22 @@
         group: "{{ dns_user }}"
         mode: '0750'
 
+    - name: Test filesystem where user's home directory is located
+      ansible.builtin.command: "stat -f -c %T /home/{{ dns_user }}"
+      register: home_fs_type
+
+    - name: Change podman storage config if btrfs is detected
+      ansible.builtin.blockinfile:
+        path: "/home/{{ dns_user }}/.config/containers/storage.conf"
+        block: |
+          [storage]
+          driver = "btrfs"
+        create: true
+        mode: '0640'
+        owner: "{{ dns_user }}"
+        group: "{{ dns_user }}"
+      when: home_fs_type.stdout == "btrfs"
+
     - name: Deploy Quadlet Container file
       ansible.builtin.template:
         src: technitium.j2
@@ -28,30 +44,39 @@
         group: "{{ dns_user }}"
         mode: '0640'
       notify:
-        - Reload quadlet via machinectl
-        - Start Technitium via machinectl
+        - Install acl
+        - Reload quadlet
+        - Start Technitium
 
   handlers:
-    - name: Reload quadlet via machinectl
+    - name: Install acl
+      ansible.builtin.package:
+        name: acl
+        state: present
+    - name: Reload quadlet
       ansible.builtin.systemd:
         scope: user
         daemon_reexec: true
       environment:
-        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user }}/bus"
-        XDG_RUNTIME_DIR: "/run/user/{{ dns_user }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user_uid }}/bus"
+        XDG_RUNTIME_DIR: "/run/user/{{ dns_user_uid }}"
       become: true
-      become_method: sudo
+      become_method: ansible.builtin.sudo
       become_user: "{{ dns_user }}"
+      vars:
+        ansible_remote_tmp: /tmp/.ansible-{{ dns_user }}
 
-    - name: Start Technitium via machinectl
+    - name: Start Technitium
       ansible.builtin.systemd:
         name: technitium
         scope: user
         enabled: true
         state: started
       environment:
-        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user }}/bus"
-        XDG_RUNTIME_DIR: "/run/user/{{ dns_user }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ dns_user_uid }}/bus"
+        XDG_RUNTIME_DIR: "/run/user/{{ dns_user_uid }}"
       become: true
-      become_method: sudo
+      become_method: ansible.builtin.sudo
       become_user: "{{ dns_user }}"
+      vars:
+        ansible_remote_tmp: /tmp/.ansible-{{ dns_user }}

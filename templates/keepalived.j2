@@ -8,7 +8,7 @@ vrrp_script check_dns {
 # create the virtual endpoint
 vrrp_instance VI_DNS {
     state {{ vrrp_state }}
-    interface eth0
+    interface {{ ansible_default_ipv4.interface }}
     virtual_router_id 51
     priority {{ vrrp_priority }}
     advert_int 1

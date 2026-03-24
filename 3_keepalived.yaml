@@ -9,7 +9,7 @@
         state: present
 
     - name: Configure firewalld for Keepalived VRRP
-      ansible.builtin.firewalld:
+      ansible.posix.firewalld:
         rich_rule: rule protocol value="vrrp" accept
         permanent: true
         state: enabled
@@ -22,9 +22,8 @@
         group: root
         mode: '0640'
 
-  handlers:
-    - name: Restart keepalived
+    - name: Ensure Keepalived is enabled and started
       ansible.builtin.systemd:
         name: keepalived
-        state: restarted
+        state: started
         enabled: true
